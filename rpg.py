@@ -41,6 +41,7 @@ class Enemy(pygame.sprite.Sprite):
         self.direction="RIGHT"
         displaysurface.blit(self.image, (self.vx, self.vy))
         self.bouncing=False
+        self.delete=False
     def move(self):
         self.movementx=player.pos.x-self.pos.x
         self.movementy=player.pos.y-self.pos.y
@@ -98,6 +99,12 @@ class Player(pygame.sprite.Sprite):
             self.acc.y =-ACC
         if pressed_keys[K_DOWN]:
             self.acc.y=ACC
+        if playercollide1 and event.key==pygame.K_SPACE:
+            enemy.delete=True
+        if playercollide2 and event.key==pygame.K_SPACE:
+            enemy2.delete=True
+
+
         self.acc.x += self.vel.x * FRIC
         self.acc.y += self.vel.y * FRIC
         self.vel += self.acc
@@ -130,9 +137,7 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         self.vel.y=0
     def attack(self):
-        self.isattacking=False
-        if event.type==pygame.K_SPACE:
-           self.isattacking=True
+       pass 
            
     # def move(self):
     #     pressed_keys=pygame.key.get_pressed()
@@ -160,7 +165,6 @@ while True:
     enemy1hitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(enemy.pos.x-20,enemy.pos.y-30,110,130))
     enemy2hitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(enemy2.pos.x-20,enemy2.pos.y-30,110,130))#hitbox of enemy
     background.render()
-    player.attack()
     if player.playerisflipped==False:
         playerhitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(player.pos.x+50,player.pos.y+0,40,50))
     else:
@@ -172,19 +176,16 @@ while True:
         enemy.bouncing=True
         enemy2.bouncing=True
         # print("COLLIDE")
-    if collide==False:
 
+    if collide==False:
         enemy.bouncing=False
         enemy2.bouncing=False
-    if playercollide1 and player.isattacking==True:
-        enemy.vel=-enemy.vel*random.randint(2,5)*5
-    if playercollide2 and player.isattacking==True:
-        enemy2.vel=-enemy2.vel*random.randint(2,5)*5
-    print(player.isattacking)
     # print ("enemyvelx", enemy.vel.x, "enemyvely", enemy.vel.y, "enemy2velx", enemy2.vel.x,"enemy2vely", enemy2.vel.y)
     # print ("\nenemyposx", enemy.pos.x, "enemyposy", enemy.pos.y, "enemy2posx", enemy2.pos.x,"enemy2posy", enemy2.pos.y)
     displaysurface.blit(player.image,player.rect)
-    displaysurface.blit(enemy2.image,enemy2.rect)
-    displaysurface.blit(enemy.image,enemy.rect)#displays the player
+    if enemy2.delete==False:
+        displaysurface.blit(enemy2.image,enemy2.rect)
+    if enemy.delete==False:
+        displaysurface.blit(enemy.image,enemy.rect)#displays the player
     pygame.display.update()
     FPS_CLOCK.tick(FPS)
