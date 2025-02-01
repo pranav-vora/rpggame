@@ -2,6 +2,8 @@ import pygame
 from pygame.locals import *
 import sys
 import random
+from datetime import datetime, timezone
+import time
 from tkinter import filedialog
 from tkinter import *
 pygame.init()
@@ -81,6 +83,8 @@ class Player(pygame.sprite.Sprite):
         self.direction="RIGHT"
         displaysurface.blit(self.image, (self.vx, self.vy))
         self.playerisflipped=False
+        self.attacking=False
+        self.lastAttackTime=0
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT]:
@@ -99,12 +103,9 @@ class Player(pygame.sprite.Sprite):
             self.acc.y =-ACC
         if pressed_keys[K_DOWN]:
             self.acc.y=ACC
-        if playercollide1 and event.key==pygame.K_SPACE:
-            enemy.delete=True
-        if playercollide2 and event.key==pygame.K_SPACE:
-            enemy2.delete=True
+        
 
-
+        
         self.acc.x += self.vel.x * FRIC
         self.acc.y += self.vel.y * FRIC
         self.vel += self.acc
@@ -136,9 +137,17 @@ class Player(pygame.sprite.Sprite):
        
     def update(self):
         self.vel.y=0
-    def attack(self):
-       pass 
-           
+    def isAttacking(self):
+        key_pressed=pygame.key.get_pressed()
+        if key_pressed[K_SPACE]:
+            self.attacking=True
+            print(str(datetime.now(timezone.utc))[11:23])
+                  
+            print("attacking")
+            
+        self.attacking=False
+
+        print("not attacking")
     # def move(self):
     #     pressed_keys=pygame.key.get_pressed()
     #     if pressed_keys[pygame.K_w]:
@@ -172,6 +181,13 @@ while True:
     collide=pygame.Rect.colliderect(enemy1hitbox,enemy2hitbox)
     playercollide1=pygame.Rect.colliderect(enemy1hitbox,playerhitbox)
     playercollide2=pygame.Rect.colliderect(enemy2hitbox,playerhitbox)
+    key_pressed=pygame.key.get_pressed()
+    
+    player.isAttacking()
+    if playercollide1 and key_pressed[K_SPACE]:
+        enemy.delete=True
+    if playercollide2 and key_pressed[K_SPACE]:
+        enemy2.delete=True
     if collide:
         enemy.bouncing=True
         enemy2.bouncing=True
