@@ -44,6 +44,7 @@ class Enemy(pygame.sprite.Sprite):
         displaysurface.blit(self.image, (self.vx, self.vy))
         self.bouncing=False
         self.delete=False
+        self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
     def move(self):
         self.movementx=player.pos.x-self.pos.x
         self.movementy=player.pos.y-self.pos.y
@@ -66,6 +67,8 @@ class Enemy(pygame.sprite.Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
+    def enemyhitbox(self):
+        self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -85,6 +88,7 @@ class Player(pygame.sprite.Sprite):
         self.playerisflipped=False
         self.attacking=False
         self.lastAttackTime=0
+        self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+50,self.pos.y+0,40,50))
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT]:
@@ -134,7 +138,11 @@ class Player(pygame.sprite.Sprite):
         self.pos += self.vel + 0.5 * self.acc
         self.rect.midbottom = self.pos
      
-       
+    def playerhitbox(self):
+        if self.playerisflipped==False:
+            self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+50,self.pos.y+0,40,50))
+        else:
+            self.hitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(self.pos.x-20,self.pos.y+0,40,50))
     def update(self):
         self.vel.y=0
     def isAttacking(self):
@@ -171,16 +179,16 @@ while True:
     enemy.move()
     enemy2.move()
     color=(255,0,0)
-    enemy1hitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(enemy.pos.x-20,enemy.pos.y-30,110,130))
-    enemy2hitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(enemy2.pos.x-20,enemy2.pos.y-30,110,130))#hitbox of enemy
+    #hitboxes
+    enemy.enemyhitbox()
+    enemy2.enemyhitbox()
     background.render()
-    if player.playerisflipped==False:
-        playerhitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(player.pos.x+50,player.pos.y+0,40,50))
-    else:
-        playerhitbox=pygame.draw.rect(displaysurface,color, pygame.Rect(player.pos.x-20,player.pos.y+0,40,50))
-    collide=pygame.Rect.colliderect(enemy1hitbox,enemy2hitbox)
-    playercollide1=pygame.Rect.colliderect(enemy1hitbox,playerhitbox)
-    playercollide2=pygame.Rect.colliderect(enemy2hitbox,playerhitbox)
+    player.playerhitbox()
+    #collide detection
+    collide=pygame.Rect.colliderect(enemy.hitbox,enemy2.hitbox)
+    playercollide1=pygame.Rect.colliderect(enemy.hitbox,player.hitbox)
+    playercollide2=pygame.Rect.colliderect(enemy2.hitbox,player.hitbox)
+
     key_pressed=pygame.key.get_pressed()
     
     player.isAttacking()
