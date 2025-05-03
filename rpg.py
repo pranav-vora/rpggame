@@ -20,7 +20,7 @@ vec=pygame.math.Vector2
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() #adds the sprite attributes to the background class
-        self.bgimage=pygame.image.load("pixilart-drawing (1).png")
+        self.bgimage=pygame.image.load("images/pixilart-drawing (1).png")
         self.bgX=0
         self.bgY=0
     def render(self):
@@ -28,7 +28,7 @@ class Background(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() 
-        self.image=pygame.image.load("enemy.png")
+        self.image=pygame.image.load("images/enemy.png")
         self.vx=0
         self.vy=0
         self.surf = pygame.Surface((30,30))
@@ -48,6 +48,7 @@ class Enemy(pygame.sprite.Sprite):
         self.attacking=False
         self.startAttackTime=time.time()
         self.movementblocked=False
+        self.diedshortrange=False
     def move(self):
         self.movementx=player.pos.x-self.pos.x
         self.movementy=player.pos.y-self.pos.y
@@ -95,7 +96,8 @@ class Enemy(pygame.sprite.Sprite):
     def execute(self):
         self.move()
         self.enemyhitbox()
-        self.death()
+        self.shortRangeDeath()
+        self.longRangeDeath()
         self.isattacking()
     def isattacking(self):
         if time.time()-self.startAttackTime>2:
@@ -106,13 +108,13 @@ class Enemy(pygame.sprite.Sprite):
         if time.time()-self.startAttackTime>0.1:
             self.attacking=False
 
-    def death(self):
-        if self.isdead==True:
-            self.image=pygame.image.load("enemy_death.png")
-            print(time.time()-startDeathTime)
+    def shortRangeDeath(self):
+        if self.isdead==True and self.diedshortrange==True:
+            self.image=pygame.image.load("images/enemy_short_range_death.png")
+
             if time.time()-startDeathTime>2:
-                self.image=pygame.image.load("enemy.png")
-                self.vx=0 
+                self.image=pygame.image.load("images/enemy.png")
+                self.vx=0
                 self.vy=0
                 self.surf = pygame.Surface((30,30))
                 self.size = self.image.get_size()
@@ -128,6 +130,53 @@ class Enemy(pygame.sprite.Sprite):
                 self.bouncing=False
                 self.isdead=False
                 self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
+                self.attacking=False
+                self.startAttackTime=time.time()
+                self.movementblocked=False
+                self.diedshortrange=False
+    def longRangeDeath(self):
+        if self.isdead==True and self.diedshortrange==False:
+            print(time.time()-startDeathTime)
+            if time.time()-startDeathTime>0.1:
+                self.image=pygame.image.load("images/explosion (1).png")
+            if time.time()-startDeathTime>0.2:
+                self.image=pygame.image.load("images/explosion (2).png")
+            if time.time()-startDeathTime>0.3:
+                self.image=pygame.image.load("images/explosion (3).png")
+            if time.time()-startDeathTime>0.4:
+                self.image=pygame.image.load("images/explosion (4).png")
+            if time.time()-startDeathTime>0.5:
+                self.image=pygame.image.load("images/explosion (5).png")
+            if time.time()-startDeathTime>0.6:
+                self.image=pygame.image.load("images/explosion (6).png")
+            if time.time()-startDeathTime>0.7:
+                self.image=pygame.image.load("images/explosion (7).png")
+            if time.time()-startDeathTime>0.8:
+                self.image=pygame.image.load("images/explosion (8).png")
+            if time.time()-startDeathTime>1:
+                self.image=pygame.image.load("images/explosion (9).png")
+            if time.time()-startDeathTime>3:
+                self.image=pygame.image.load("images/enemy.png")
+                self.vx=0
+                self.vy=0
+                self.surf = pygame.Surface((30,30))
+                self.size = self.image.get_size()
+                self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))#enemy size: 98x126
+                print(self.image)
+                print(self.size)
+                self.rect = self.surf.get_rect()
+                self.pos=vec((random.randint(-500,1500),random.randint(-500,-300)))#vec=vector
+                self.vel=vec(0,0)
+                self.acc=vec(0,0)
+                self.direction="RIGHT"
+                displaysurface.blit(self.image, (self.vx, self.vy))
+                self.bouncing=False
+                self.isdead=False
+                self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
+                self.attacking=False
+                self.startAttackTime=time.time()
+                self.movementblocked=False
+                self.diedshortrange=False
 
 
 
@@ -135,7 +184,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.last_time_attacked=time.time()
-        self.image=pygame.image.load("player.png") #self addresses the classes attributes
+        self.image=pygame.image.load("images/player.png") #self addresses the classes attributes
         self.vx=0
         self.vy=0
         self.surf = pygame.Surface((30,30))
@@ -149,12 +198,15 @@ class Player(pygame.sprite.Sprite):
         displaysurface.blit(self.image, (self.vx, self.vy))
         self.playerisflipped=False
         self.attacking=False
+        self.shortRangeAttack=False
+        self.longRangeAttack=False
         self.lastAttackTime=0
         self.hitboxsword=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+50,self.pos.y+0,40,50))
         self.startAttackTime=time.time()
         self.playerhealth=100
         self.bouncing=False
-        self.playerknockbackhitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-400,self.pos.y+0,400,50))   
+        self.playerknockbackhitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-400,self.pos.y+0,400,50))  
+
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] and self.attacking==False and self.bouncing==False:
@@ -206,19 +258,19 @@ class Player(pygame.sprite.Sprite):
 
 
         if self.playerisflipped==False and self.attacking==False:
-            self.image=pygame.image.load("player.png")
+            self.image=pygame.image.load("images/player.png")
             self.size = self.image.get_size()
             self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))
         elif self.playerisflipped==True and self.attacking==False:
-            self.image=pygame.image.load("player_flipped.png")
+            self.image=pygame.image.load("images/player_flipped.png")
             self.size = self.image.get_size()
             self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))
         elif self.playerisflipped==False and self.attacking==True:
-            self.image=pygame.image.load("player_rotated.png")
+            self.image=pygame.image.load("images/player_rotated.png")
             self.size = self.image.get_size()
             self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))
         else:
-            self.image=pygame.image.load("player_flipped_rotated.png")
+            self.image=pygame.image.load("images/player_flipped_rotated.png")
             self.size = self.image.get_size()
             self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))
 
@@ -245,12 +297,18 @@ class Player(pygame.sprite.Sprite):
         key_pressed=pygame.key.get_pressed()
         if key_pressed[K_SPACE] and time.time()-self.startAttackTime>2:
             self.attacking=True
+            self.shortRangeAttack=True
+            self.startAttackTime=time.time()
+        if event.type==pygame.KEYDOWN and  event.key == pygame.K_RSHIFT and time.time()-self.startAttackTime>10:
+            self.attacking=True
+            self.longRangeAttack=True
             self.startAttackTime=time.time()
         # print(time.time()-self.startAttackTime) 
         
         
         if time.time()-self.startAttackTime>0.25:
             self.attacking=False
+            self.shortRangeAttack=False
 
     def execute(self):
         self.move()
@@ -258,6 +316,11 @@ class Player(pygame.sprite.Sprite):
         self.bodyhitbox()
         self.knockbackhitbox()
         self.isAttacking()
+
+        
+            
+        
+        
 
 player=Player() #adds an instance of the player class to create a player
 enemy=Enemy()
@@ -285,10 +348,12 @@ while True:
     print (playercollide6)
     key_pressed=pygame.key.get_pressed()
     
-    if playercollide1 and player.attacking:
+    if playercollide1 and player.shortRangeAttack:
+        enemy.diedshortrange=True
         enemy.isdead=True
         startDeathTime=time.time()
-    if playercollide2 and player.attacking:
+    if playercollide2 and player.shortRangeAttack:
+        enemy2.diedshortrange=True
         enemy2.isdead=True
         startDeathTime=time.time()
     if collide:
@@ -302,21 +367,22 @@ while True:
         player.playerhealth-=1
         startLosingHealthTime=time.time()
 
-    if playercollide5 and enemy.isdead==False and player.attacking==True:
-        enemy.bouncing=True
-    if playercollide6 and enemy.isdead==False and player.attacking==True:
-        enemy2.bouncing=True
+    if playercollide5 and enemy.isdead==False and player.longRangeAttack==True:
+        enemy.diedshortrange=False
+        enemy.isdead=True
+        startDeathTime=time.time()
 
-    if collide==False and playercollide5==False and playercollide6==False:
-        enemy.bouncing=False
-        enemy2.bouncing=False
+    if playercollide6 and enemy.isdead==False and player.longRangeAttack==True:
+        enemy2.diedshortrange=False
+        enemy2.isdead=True
+        startDeathTime=time.time()
+
 
     # print ("enemyvelx", enemy.vel.x, "enemyvely", enemy.vel.y, "enemy2velx", enemy2.vel.x,"enemy2vely", enemy2.vel.y)
     # print ("\nenemyposx", enemy.pos.x, "enemyposy", enemy.pos.y, "enemy2posx", enemy2.pos.x,"enemy2posy", enemy2.pos.y)
 
     displaysurface.blit(player.image,player.rect)
     displaysurface.blit(enemy2.image,enemy2.rect)
-    displaysurface.blit(enemy.image,enemy.rect)#displays the player
-        
+    displaysurface.blit(enemy.image,enemy.rect)#displays the player   
     pygame.display.update()
     FPS_CLOCK  .tick(FPS)
