@@ -17,6 +17,7 @@ COUNT=0
 numberofenemies=1
 displaysurface=pygame.display.set_mode((WIDTH, HEIGHT))
 vec=pygame.math.Vector2
+enemyList=[]
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() #adds the sprite attributes to the background class
@@ -49,21 +50,22 @@ class Enemy(pygame.sprite.Sprite):
         self.startAttackTime=time.time()
         self.movementblocked=False
         self.diedshortrange=False
+        self.touchingPlayer=False
     def move(self):
         self.movementx=player.pos.x-self.pos.x
         self.movementy=player.pos.y-self.pos.y
         if self.movementx>0 and self.movementy>0 and self.bouncing==False:
-            self.acc.x=ACC*0.5
-            self.acc.y=ACC*0.5
+            self.acc.x=ACC
+            self.acc.y=ACC
         if self.movementx<0 and self.movementy>0 and self.bouncing==False:
-            self.acc.x=-ACC*0.5
-            self.acc.y=ACC*0.5
+            self.acc.x=-ACC
+            self.acc.y=ACC
         if self.movementx>0 and self.movementy<0 and self.bouncing==False:
-            self.acc.x=ACC*0.5
-            self.acc.y=-ACC*0.5
+            self.acc.x=ACC
+            self.acc.y=-ACC
         if self.movementx<0 and self.movementy<0 and self.bouncing==False:
-            self.acc.x=-ACC*0.5
-            self.acc.y=-ACC*0.5
+            self.acc.x=-ACC
+            self.acc.y=-ACC
         if self.bouncing==True:
             self.vel=-self.vel*random.randint(2,5)*5
 
@@ -85,7 +87,7 @@ class Enemy(pygame.sprite.Sprite):
             self.pos.y=1500
 
 
-        if self.isdead==False:
+        if self.isdead==False and self.touchingPlayer==False:
             self.acc.x += self.vel.x * FRIC
             self.acc.y += self.vel.y * FRIC
             self.vel += self.acc
@@ -136,7 +138,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.diedshortrange=False
     def longRangeDeath(self):
         if self.isdead==True and self.diedshortrange==False:
-            print(time.time()-startDeathTime)
+            # print(time.time()-startDeathTime)
             if time.time()-startDeathTime>0.1:
                 self.image=pygame.image.load("images/explosion (1).png")
             if time.time()-startDeathTime>0.2:
@@ -204,20 +206,19 @@ class Player(pygame.sprite.Sprite):
         self.hitboxsword=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+50,self.pos.y+0,40,50))
         self.startAttackTime=time.time()
         self.playerhealth=100
-        self.bouncing=False
-        self.playerknockbackhitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-400,self.pos.y+0,400,50))  
+        self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x+450,self.pos.y-50,600,200))
 
     def move(self):
         pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[K_LEFT] and self.attacking==False and self.bouncing==False:
+        if pressed_keys[K_LEFT] and self.attacking==False:
             self.acc.x =-ACC
             self.playerisflipped=True
-        if pressed_keys[K_RIGHT] and self.attacking==False and self.bouncing==False:
+        if pressed_keys[K_RIGHT] and self.attacking==False:
             self.acc.x=ACC
             self.playerisflipped=False
-        if pressed_keys[K_UP] and self.attacking==False and self.bouncing==False:
+        if pressed_keys[K_UP] and self.attacking==False:
             self.acc.y =-ACC
-        if pressed_keys[K_DOWN] and self.attacking==False and self.bouncing==False:
+        if pressed_keys[K_DOWN] and self.attacking==False:
             self.acc.y=ACC
 
 
@@ -225,8 +226,6 @@ class Player(pygame.sprite.Sprite):
         self.acc.x += self.vel.x * FRIC
         self.acc.y += self.vel.y * FRIC
         self.vel += self.acc
-        if self.bouncing==True:
-            self.vel=-self.vel*random.randint(2,5)*5
         if abs(self.vel.x) < 0.5:  # Stop shaking by setting a threshold
             self.vel.x = 0
             self.acc.x=0
@@ -290,10 +289,12 @@ class Player(pygame.sprite.Sprite):
             self.hitboxbody=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+15,self.pos.y-25,60,100))
     def knockbackhitbox(self):
             if self.playerisflipped==False:
-                self.playerknockbackhitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x,self.pos.y+0,400,50))  
+                self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x+450,self.pos.y-50,600,200))
             else:
-                self.playerknockbackhitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-400,self.pos.y+0,400,50))         
+
+                self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-1000,self.pos.y-50,600,200))
     def isAttacking(self):
+        # print(time.time()-self.startAttackTime)
         key_pressed=pygame.key.get_pressed()
         if key_pressed[K_SPACE] and time.time()-self.startAttackTime>2:
             self.attacking=True
@@ -309,6 +310,7 @@ class Player(pygame.sprite.Sprite):
         if time.time()-self.startAttackTime>0.25:
             self.attacking=False
             self.shortRangeAttack=False
+            self.longRangeAttack=False
 
     def execute(self):
         self.move()
@@ -326,26 +328,38 @@ player=Player() #adds an instance of the player class to create a player
 enemy=Enemy()
 enemy2=Enemy()
 background=Background()
+enemyDict={1:(enemy,0),2:(enemy2,0)}
+# the plan is to for every element in enemy list, we want to make each of the elements into a dictionary
+#  and set each of the keys to collide detection with the player and other enemies.
 while True:
     for event in pygame.event.get():
         if event.type==QUIT:
             pygame.quit()
             sys.exit()
+    # for enemies in enemydict:
+    #     enemies.execute()
+    #     for i in range(len(enemydict)):
+    for i in enemyDict.values():
+        i[0].execute()  
+        print("________")      
+        i[1]=
     player.execute()
-    enemy.execute()
-    enemy2.execute()
+
+
     background.render()
     
+    
+
+
+
     #collide detection
     collide=pygame.Rect.colliderect(enemy.hitbox,enemy2.hitbox)
     playercollide1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxsword) #sword
     playercollide2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxsword) #sword
     playercollide3=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
     playercollide4=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
-    playercollide5=pygame.Rect.colliderect(enemy.hitbox,player.playerknockbackhitbox) #knockback hitbox
-    playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerknockbackhitbox) #knockback hitbox
-    print (playercollide5)
-    print (playercollide6)
+    playercollide5=pygame.Rect.colliderect(enemy.hitbox,player.playerlongrangehitbox) #long range hitbox
+    playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
     key_pressed=pygame.key.get_pressed()
     
     if playercollide1 and player.shortRangeAttack:
@@ -359,13 +373,28 @@ while True:
     if collide:
         enemy.bouncing=True
         enemy2.bouncing=True
+    if collide==False:
+        enemy.bouncing=False
+        enemy2.bouncing=False
         # print("COLLIDE")
+
+
+
     if playercollide3 and enemy.isdead==False and enemy.attacking:
+        enemy.touchingPlayer=True
         player.playerhealth-=1
         startLosingHealthTime=time.time()
     if playercollide4 and enemy2.isdead==False and enemy.attacking:
+        enemy2.touchingPlayer=True
         player.playerhealth-=1
         startLosingHealthTime=time.time()
+
+    if playercollide3==False:
+        enemy.touchingPlayer=False
+    if playercollide4==False:
+        enemy2.touchingPlayer=False
+
+    print(player.playerhealth)
 
     if playercollide5 and enemy.isdead==False and player.longRangeAttack==True:
         enemy.diedshortrange=False
