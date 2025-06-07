@@ -18,6 +18,7 @@ numberofenemies=1
 displaysurface=pygame.display.set_mode((WIDTH, HEIGHT))
 vec=pygame.math.Vector2
 enemyList=[]
+enemyDict={}
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() #adds the sprite attributes to the background class
@@ -67,7 +68,7 @@ class Enemy(pygame.sprite.Sprite):
             self.acc.x=-ACC
             self.acc.y=-ACC
         if self.bouncing==True:
-            self.vel=-self.vel*random.randint(2,5)*5
+            self.vel=-self.vel*random.randint(2,5)*2
 
         if self.pos.x<-500:
             self.vel.x =0
@@ -205,7 +206,9 @@ class Player(pygame.sprite.Sprite):
         self.lastAttackTime=0
         self.hitboxsword=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x+50,self.pos.y+0,40,50))
         self.startAttackTime=time.time()
+        self.maxhealth=100
         self.playerhealth=100
+        self.ratio=self.playerhealth/self.maxhealth
         self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x+450,self.pos.y-50,600,200))
 
     def move(self):
@@ -311,24 +314,27 @@ class Player(pygame.sprite.Sprite):
             self.attacking=False
             self.shortRangeAttack=False
             self.longRangeAttack=False
-
+    def healthBar(self):
+        pass
     def execute(self):
         self.move()
         self.swordhitbox()
         self.bodyhitbox()
         self.knockbackhitbox()
         self.isAttacking()
+        self.healthBar()
 
         
             
         
-        
+collideList=[]      
 
 player=Player() #adds an instance of the player class to create a player
 enemy=Enemy()
 enemy2=Enemy()
+enemy3=Enemy()
 background=Background()
-enemyDict={1:(enemy,0),2:(enemy2,0)}
+enemyDict={1:(enemy,[[]]),2:(enemy2,[[]]),3:(enemy3,[[]])}
 # the plan is to for every element in enemy list, we want to make each of the elements into a dictionary
 #  and set each of the keys to collide detection with the player and other enemies.
 while True:
@@ -339,16 +345,30 @@ while True:
     # for enemies in enemydict:
     #     enemies.execute()
     #     for i in range(len(enemydict)):
+
     for i in enemyDict.values():
         i[0].execute()  
-        print("________")      
-        i[1]=
+        print("________")   
+    #     for j in range(len(enemyDict)-1):
+    #         temp = (pygame.Rect.colliderect(i[0].hitbox,player.hitboxsword))
+    #         i[1][0].append(temp)
+            
+    # print(enemyDict[1])
+    print("spacing")
+        #     collide=pygame.Rect.colliderect(i[0].hitbox,j[0].hitbox)
+        # playercollide1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxsword) #sword
+        # playercollide2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxsword) #sword
+        # playercollide3=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
+        # playercollide4=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
+        # playercollide5=pygame.Rect.colliderect(enemy.hitbox,player.playerlongrangehitbox) #long range hitbox
+        # playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
     player.execute()
 
 
     background.render()
-    
-    
+    pygame.draw.rect(displaysurface,(255,0,0), (250, 250, 300, 40))
+    pygame.draw.rect(displaysurface,(0,255,0), (250, 250, 300 * player.ratio, 40))
+    player.ratio=player.playerhealth/player.maxhealth
 
 
 
