@@ -19,6 +19,7 @@ displaysurface=pygame.display.set_mode((WIDTH, HEIGHT))
 vec=pygame.math.Vector2
 enemyList=[]
 enemyDict={}
+gameOver=False
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() #adds the sprite attributes to the background class
@@ -103,7 +104,7 @@ class Enemy(pygame.sprite.Sprite):
         self.longRangeDeath()
         self.isattacking()
     def isattacking(self):
-        if time.time()-self.startAttackTime>2:
+        if time.time()-self.startAttackTime>0.5:
             self.attacking=True
             self.startAttackTime=time.time()
         # print(time.time()-self.startAttackTime) 
@@ -210,11 +211,12 @@ class Player(pygame.sprite.Sprite):
         self.playerhealth=100
         self.ratio=self.playerhealth/self.maxhealth
         self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x+450,self.pos.y-50,600,200))
+        self.healthbar=pygame.draw.rect(displaysurface,(255,0,0), (250, 250, 300, 40)) ,  pygame.draw.rect(displaysurface,(0,255,0), (250, 250, 300 * self.ratio, 40))
 
     def move(self):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] and self.attacking==False:
-            self.acc.x =-ACC
+            self.acc.x =-ACC   
             self.playerisflipped=True
         if pressed_keys[K_RIGHT] and self.attacking==False:
             self.acc.x=ACC
@@ -303,7 +305,7 @@ class Player(pygame.sprite.Sprite):
             self.attacking=True
             self.shortRangeAttack=True
             self.startAttackTime=time.time()
-        if event.type==pygame.KEYDOWN and  event.key == pygame.K_RSHIFT and time.time()-self.startAttackTime>10:
+        if event.type==pygame.KEYDOWN and  event.key == pygame.K_RSHIFT and time.time()-self.startAttackTime> 0.1:
             self.attacking=True
             self.longRangeAttack=True
             self.startAttackTime=time.time()
@@ -314,30 +316,40 @@ class Player(pygame.sprite.Sprite):
             self.attacking=False
             self.shortRangeAttack=False
             self.longRangeAttack=False
+
+
+
+            
     def healthBar(self):
-        pass
+        self.ratio=self.playerhealth/self.maxhealth
+        self.healthbar=pygame.draw.rect(displaysurface,(255,0,0), (self.pos.x-70, self.pos.y-50, 200, 20)) ,  pygame.draw.rect(displaysurface,(0,255,0), (self.pos.x-70, self.pos.y-50, 200 * player.ratio, 20))
+
+
+
+
     def execute(self):
         self.move()
         self.swordhitbox()
         self.bodyhitbox()
         self.knockbackhitbox()
         self.isAttacking()
-        self.healthBar()
+
 
         
             
         
 collideList=[]      
-
 player=Player() #adds an instance of the player class to create a player
 enemy=Enemy()
 enemy2=Enemy()
 enemy3=Enemy()
+enemy4=Enemy()
+enemy5=Enemy()
 background=Background()
-enemyDict={1:(enemy,[[]]),2:(enemy2,[[]]),3:(enemy3,[[]])}
+enemyDict={1:(enemy,[[]]),2:(enemy2,[[]]),3:(enemy3,[[]]),4:(enemy4,[[]])}
 # the plan is to for every element in enemy list, we want to make each of the elements into a dictionary
 #  and set each of the keys to collide detection with the player and other enemies.
-while True:
+while gameOver==False:
     for event in pygame.event.get():
         if event.type==QUIT:
             pygame.quit()
@@ -364,74 +376,169 @@ while True:
         # playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
     player.execute()
 
+    if player.playerhealth>0:
+        background.render()
+    else:
+        gameOver=True
+    player.healthBar()
 
-    background.render()
-    pygame.draw.rect(displaysurface,(255,0,0), (250, 250, 300, 40))
-    pygame.draw.rect(displaysurface,(0,255,0), (250, 250, 300 * player.ratio, 40))
-    player.ratio=player.playerhealth/player.maxhealth
 
 
 
-    #collide detection
-    collide=pygame.Rect.colliderect(enemy.hitbox,enemy2.hitbox)
-    playercollide1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxsword) #sword
-    playercollide2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxsword) #sword
-    playercollide3=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
-    playercollide4=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
-    playercollide5=pygame.Rect.colliderect(enemy.hitbox,player.playerlongrangehitbox) #long range hitbox
-    playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
+    #collide detection 
+    collide_1and2=pygame.Rect.colliderect(enemy.hitbox,enemy2.hitbox)
+    collide_1and3=pygame.Rect.colliderect(enemy.hitbox,enemy3.hitbox)
+    collide_1and4=pygame.Rect.colliderect(enemy.hitbox,enemy4.hitbox)
+    collide_2and3=pygame.Rect.colliderect(enemy2.hitbox,enemy3.hitbox)
+    collide_2and4=pygame.Rect.colliderect(enemy2.hitbox,enemy4.hitbox)
+    collide_3and4=pygame.Rect.colliderect(enemy3.hitbox,enemy4.hitbox)
+
+
+
+
+    playercollide_sword1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxsword) #sword
+    playercollide_sword2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxsword) #sword
+    playercollide_sword3=pygame.Rect.colliderect(enemy3.hitbox,player.hitboxsword) #sword
+    playercollide_sword4=pygame.Rect.colliderect(enemy4.hitbox,player.hitboxsword) #sword
+
+
+    playercollide_body1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
+    playercollide_body2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
+    playercollide_body3=pygame.Rect.colliderect(enemy3.hitbox,player.hitboxbody) #body
+    playercollide_body4=pygame.Rect.colliderect(enemy4.hitbox,player.hitboxbody) #body
+
+
+    playercollide_lr1=pygame.Rect.colliderect(enemy.hitbox,player.playerlongrangehitbox) #long range hitbox
+    playercollide_1r2=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
+    playercollide_lr3=pygame.Rect.colliderect(enemy3.hitbox,player.playerlongrangehitbox) #long range hitbox
+    playercollide_1r4=pygame.Rect.colliderect(enemy4.hitbox,player.playerlongrangehitbox) #long range hitbox
     key_pressed=pygame.key.get_pressed()
     
-    if playercollide1 and player.shortRangeAttack:
+    if playercollide_sword1 and player.shortRangeAttack:
         enemy.diedshortrange=True
         enemy.isdead=True
         startDeathTime=time.time()
-    if playercollide2 and player.shortRangeAttack:
+    if playercollide_sword2 and player.shortRangeAttack:
         enemy2.diedshortrange=True
         enemy2.isdead=True
         startDeathTime=time.time()
-    if collide:
+
+
+    if collide_1and2:
         enemy.bouncing=True
         enemy2.bouncing=True
-    if collide==False:
+    if collide_1and2==False:
         enemy.bouncing=False
         enemy2.bouncing=False
-        # print("COLLIDE")
+
+    if collide_1and3:
+        enemy.bouncing=True
+        enemy3.bouncing=True
+    if collide_1and3==False:
+        enemy.bouncing=False
+        enemy3.bouncing=False
+
+    if collide_1and4:
+        enemy.bouncing=True
+        enemy4.bouncing=True
+    if collide_1and4==False:
+        enemy.bouncing=False
+        enemy4.bouncing=False
+
+    if collide_2and3:
+        enemy2.bouncing=True
+        enemy3.bouncing=True
+    if collide_2and3==False:
+        enemy2.bouncing=False
+        enemy3.bouncing=False
+
+    if collide_2and4:
+        enemy2.bouncing=True
+        enemy4.bouncing=True
+    if collide_2and4==False:
+        enemy2.bouncing=False
+        enemy4.bouncing=False
+
+    if collide_3and4:
+        enemy3.bouncing=True
+        enemy4.bouncing=True
+    if collide_3and4==False:
+        enemy3.bouncing=False
+        enemy4.bouncing=False
 
 
 
-    if playercollide3 and enemy.isdead==False and enemy.attacking:
+    if playercollide_body1 and enemy.isdead==False and enemy.attacking:
         enemy.touchingPlayer=True
-        player.playerhealth-=1
+        player.playerhealth-=3
         startLosingHealthTime=time.time()
-    if playercollide4 and enemy2.isdead==False and enemy.attacking:
+    if playercollide_body2 and enemy2.isdead==False and enemy.attacking:
         enemy2.touchingPlayer=True
-        player.playerhealth-=1
+        player.playerhealth-=3
         startLosingHealthTime=time.time()
 
-    if playercollide3==False:
+    if playercollide_body1==False:
         enemy.touchingPlayer=False
-    if playercollide4==False:
+    if playercollide_body2==False:
         enemy2.touchingPlayer=False
 
     print(player.playerhealth)
 
-    if playercollide5 and enemy.isdead==False and player.longRangeAttack==True:
+    if playercollide_lr1 and enemy.isdead==False and player.longRangeAttack==True:
         enemy.diedshortrange=False
         enemy.isdead=True
         startDeathTime=time.time()
 
-    if playercollide6 and enemy.isdead==False and player.longRangeAttack==True:
+    if playercollide_1r2 and enemy.isdead==False and player.longRangeAttack==True:
         enemy2.diedshortrange=False
         enemy2.isdead=True
         startDeathTime=time.time()
 
+        # Enemy 3
+    if playercollide_sword3 and player.shortRangeAttack:
+        enemy3.diedshortrange = True
+        enemy3.isdead = True
+        startDeathTime = time.time()
+
+    if playercollide_body3 and enemy3.isdead == False and enemy3.attacking:
+        enemy3.touchingPlayer = True
+        player.playerhealth -= 3
+        startLosingHealthTime = time.time()
+
+    if playercollide_body3 == False:
+        enemy3.touchingPlayer = False
+
+    if playercollide_lr3 and enemy3.isdead == False and player.longRangeAttack == True:
+        enemy3.diedshortrange = False
+        enemy3.isdead = True
+        startDeathTime = time.time()
+
+    # Enemy 4
+    if playercollide_sword4 and player.shortRangeAttack:
+        enemy4.diedshortrange = True
+        enemy4.isdead = True
+        startDeathTime = time.time()
+
+    if playercollide_body4 and enemy4.isdead == False and enemy4.attacking:
+        enemy4.touchingPlayer = True
+        player.playerhealth -= 3
+        startLosingHealthTime = time.time()
+
+    if playercollide_body4 == False:
+        enemy4.touchingPlayer = False
+
+    if playercollide_1r4 and enemy4.isdead == False and player.longRangeAttack == True:
+        enemy4.diedshortrange = False
+        enemy4.isdead = True
+        startDeathTime = time.time()
 
     # print ("enemyvelx", enemy.vel.x, "enemyvely", enemy.vel.y, "enemy2velx", enemy2.vel.x,"enemy2vely", enemy2.vel.y)
     # print ("\nenemyposx", enemy.pos.x, "enemyposy", enemy.pos.y, "enemy2posx", enemy2.pos.x,"enemy2posy", enemy2.pos.y)
 
     displaysurface.blit(player.image,player.rect)
     displaysurface.blit(enemy2.image,enemy2.rect)
-    displaysurface.blit(enemy.image,enemy.rect)#displays the player   
+    displaysurface.blit(enemy.image,enemy.rect)  
+    displaysurface.blit(enemy3.image,enemy3.rect)
+    displaysurface.blit(enemy4.image,enemy4.rect)  
     pygame.display.update()
     FPS_CLOCK  .tick(FPS)
