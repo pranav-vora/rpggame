@@ -20,6 +20,8 @@ vec=pygame.math.Vector2
 enemyList=[]
 enemyDict={}
 gameOver=False
+enemiesKilled=0
+startTime=time.time()
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() #adds the sprite attributes to the background class
@@ -31,14 +33,15 @@ class Background(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__() 
+        self.enemyInitialize()
+    def enemyInitialize(self):
         self.image=pygame.image.load("images/enemy.png")
         self.vx=0
         self.vy=0
         self.surf = pygame.Surface((30,30))
         self.size = self.image.get_size()
         self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))#enemy size: 98x126
-        print(self.image)
-        print(self.size)
+
         self.rect = self.surf.get_rect()
         self.pos=vec((random.randint(-500,1500),random.randint(-500,-300)))#vec=vector
         self.vel=vec(0,0)
@@ -94,6 +97,13 @@ class Enemy(pygame.sprite.Sprite):
             self.acc.y += self.vel.y * FRIC
             self.vel += self.acc
             self.pos += self.vel + 0.5 * self.acc
+            if self.pos.x>1500 or self.pos.x<-1500 or self.pos.y>1500 or self.pos.y<-1500:
+                self.acc.x=0
+                self.acc.y=0
+                self.vel.x=0
+                self.vel.y=0
+                self.pos.x=1000
+                self.pos.y=1000
             self.rect.midbottom = self.pos
     def enemyhitbox(self):
         self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
@@ -107,9 +117,8 @@ class Enemy(pygame.sprite.Sprite):
         if time.time()-self.startAttackTime>0.5:
             self.attacking=True
             self.startAttackTime=time.time()
-        # print(time.time()-self.startAttackTime) 
         
-        if time.time()-self.startAttackTime>0.1:
+        if time.time()-self.startAttackTime>0.01:
             self.attacking=False
 
     def shortRangeDeath(self):
@@ -117,30 +126,9 @@ class Enemy(pygame.sprite.Sprite):
             self.image=pygame.image.load("images/enemy_short_range_death.png")
 
             if time.time()-startDeathTime>2:
-                self.image=pygame.image.load("images/enemy.png")
-                self.vx=0
-                self.vy=0
-                self.surf = pygame.Surface((30,30))
-                self.size = self.image.get_size()
-                self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))#enemy size: 98x126
-                print(self.image)
-                print(self.size)
-                self.rect = self.surf.get_rect()
-                self.pos=vec((random.randint(-500,1500),random.randint(-500,-300)))#vec=vector
-                self.vel=vec(0,0)
-                self.acc=vec(0,0)
-                self.direction="RIGHT"
-                displaysurface.blit(self.image, (self.vx, self.vy))
-                self.bouncing=False
-                self.isdead=False
-                self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
-                self.attacking=False
-                self.startAttackTime=time.time()
-                self.movementblocked=False
-                self.diedshortrange=False
+                self.enemyInitialize()
     def longRangeDeath(self):
         if self.isdead==True and self.diedshortrange==False:
-            # print(time.time()-startDeathTime)
             if time.time()-startDeathTime>0.1:
                 self.image=pygame.image.load("images/explosion (1).png")
             if time.time()-startDeathTime>0.2:
@@ -159,28 +147,8 @@ class Enemy(pygame.sprite.Sprite):
                 self.image=pygame.image.load("images/explosion (8).png")
             if time.time()-startDeathTime>1:
                 self.image=pygame.image.load("images/explosion (9).png")
-            if time.time()-startDeathTime>3:
-                self.image=pygame.image.load("images/enemy.png")
-                self.vx=0
-                self.vy=0
-                self.surf = pygame.Surface((30,30))
-                self.size = self.image.get_size()
-                self.image=pygame.transform.scale(self.image, (int(self.size[0]*0.5), int(self.size[1]*0.5)))#enemy size: 98x126
-                print(self.image)
-                print(self.size)
-                self.rect = self.surf.get_rect()
-                self.pos=vec((random.randint(-500,1500),random.randint(-500,-300)))#vec=vector
-                self.vel=vec(0,0)
-                self.acc=vec(0,0)
-                self.direction="RIGHT"
-                displaysurface.blit(self.image, (self.vx, self.vy))
-                self.bouncing=False
-                self.isdead=False
-                self.hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(self.pos.x-20,self.pos.y-30,110,130))
-                self.attacking=False
-                self.startAttackTime=time.time()
-                self.movementblocked=False
-                self.diedshortrange=False
+            if time.time()-startDeathTime>2:
+                self.enemyInitialize()
 
 
 
@@ -193,7 +161,6 @@ class Player(pygame.sprite.Sprite):
         self.vy=0
         self.surf = pygame.Surface((30,30))
         self.size = self.image.get_size()
-        print(self.size)
         self.rect = self.surf.get_rect()
         self.pos=vec((340,240))#vec=vector
         self.vel=vec(0,0)
@@ -299,17 +266,17 @@ class Player(pygame.sprite.Sprite):
 
                 self.playerlongrangehitbox=pygame.draw.rect(displaysurface,(255,255,0), pygame.Rect(self.pos.x-1000,self.pos.y-50,600,200))
     def isAttacking(self):
-        # print(time.time()-self.startAttackTime)
+
         key_pressed=pygame.key.get_pressed()
         if key_pressed[K_SPACE] and time.time()-self.startAttackTime>2:
             self.attacking=True
             self.shortRangeAttack=True
             self.startAttackTime=time.time()
-        if event.type==pygame.KEYDOWN and  event.key == pygame.K_RSHIFT and time.time()-self.startAttackTime> 0.1:
+        if event.type==pygame.KEYDOWN and  event.key == pygame.K_LSHIFT and time.time()-self.startAttackTime> 2:
             self.attacking=True
             self.longRangeAttack=True
             self.startAttackTime=time.time()
-        # print(time.time()-self.startAttackTime) 
+
         
         
         if time.time()-self.startAttackTime>0.25:
@@ -344,11 +311,25 @@ enemy=Enemy()
 enemy2=Enemy()
 enemy3=Enemy()
 enemy4=Enemy()
-enemy5=Enemy()
 background=Background()
 enemyDict={1:(enemy,[[]]),2:(enemy2,[[]]),3:(enemy3,[[]]),4:(enemy4,[[]])}
 # the plan is to for every element in enemy list, we want to make each of the elements into a dictionary
 #  and set each of the keys to collide detection with the player and other enemies.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 while gameOver==False:
     for event in pygame.event.get():
         if event.type==QUIT:
@@ -360,29 +341,35 @@ while gameOver==False:
 
     for i in enemyDict.values():
         i[0].execute()  
-        print("________")   
-    #     for j in range(len(enemyDict)-1):
-    #         temp = (pygame.Rect.colliderect(i[0].hitbox,player.hitboxsword))
-    #         i[1][0].append(temp)
-            
-    # print(enemyDict[1])
-    print("spacing")
-        #     collide=pygame.Rect.colliderect(i[0].hitbox,j[0].hitbox)
-        # playercollide1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxsword) #sword
-        # playercollide2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxsword) #sword
-        # playercollide3=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
-        # playercollide4=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
-        # playercollide5=pygame.Rect.colliderect(enemy.hitbox,player.playerlongrangehitbox) #long range hitbox
-        # playercollide6=pygame.Rect.colliderect(enemy2.hitbox,player.playerlongrangehitbox) #long range hitbox
+
+
     player.execute()
 
-    if player.playerhealth>0:
-        background.render()
-    else:
-        gameOver=True
-    player.healthBar()
 
 
+
+#text for enemies killed and time survived
+
+    gameRunTime=round(time.time()-startTime)
+    seconds=str((gameRunTime%60)).zfill(2)
+    minutes=str(int(gameRunTime/60)).zfill(2)
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    enemiesKilledText = font.render("Enemies Killed: "+str(enemiesKilled), True,(0,255,0))
+    timeSurvivedText = font.render("Time Survived: "+minutes+":"+seconds, True,(0,255,0))
+    enemiesKilledTextRect = enemiesKilledText.get_rect()
+    timeSurvivedTextRect=timeSurvivedText.get_rect()
+
+# set the center of the rectangular object.
+    enemiesKilledTextRect.center = (500, 50)
+    timeSurvivedTextRect.center = (500, 100)
+
+
+
+    # enemyhitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(enemy.pos.x-20,enemy.pos.y-30,110,130))
+    # enemy2hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(enemy2.pos.x-20,enemy2.pos.y-30,110,130))
+    # enemy3hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(enemy3.pos.x-20,enemy3.pos.y-30,110,130))
+    # enemy4hitbox=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(enemy4.pos.x-20,enemy4.pos.y-30,110,130))
+    # hitboxsword=pygame.draw.rect(displaysurface,(255,0,0), pygame.Rect(player.pos.x+50,player.pos.y+0,40,50))
 
 
     #collide detection 
@@ -401,7 +388,6 @@ while gameOver==False:
     playercollide_sword3=pygame.Rect.colliderect(enemy3.hitbox,player.hitboxsword) #sword
     playercollide_sword4=pygame.Rect.colliderect(enemy4.hitbox,player.hitboxsword) #sword
 
-
     playercollide_body1=pygame.Rect.colliderect(enemy.hitbox,player.hitboxbody) #body
     playercollide_body2=pygame.Rect.colliderect(enemy2.hitbox,player.hitboxbody) #body
     playercollide_body3=pygame.Rect.colliderect(enemy3.hitbox,player.hitboxbody) #body
@@ -417,11 +403,27 @@ while gameOver==False:
     if playercollide_sword1 and player.shortRangeAttack:
         enemy.diedshortrange=True
         enemy.isdead=True
+        enemiesKilled+=1
         startDeathTime=time.time()
-    if playercollide_sword2 and player.shortRangeAttack:
+        player.shortRangeAttack=False
+    elif playercollide_sword2 and player.shortRangeAttack:
         enemy2.diedshortrange=True
         enemy2.isdead=True
+        enemiesKilled+=1
         startDeathTime=time.time()
+        player.shortRangeAttack=False
+    elif playercollide_sword3 and player.shortRangeAttack:
+        enemy3.diedshortrange=True
+        enemy3.isdead=True
+        enemiesKilled+=1
+        startDeathTime=time.time()
+        player.shortRangeAttack=False
+    elif playercollide_sword4 and player.shortRangeAttack:
+        enemy4.diedshortrange=True
+        enemy4.isdead=True
+        enemiesKilled+=1
+        startDeathTime=time.time()
+        player.shortRangeAttack=False
 
 
     if collide_1and2:
@@ -470,75 +472,98 @@ while gameOver==False:
 
     if playercollide_body1 and enemy.isdead==False and enemy.attacking:
         enemy.touchingPlayer=True
-        player.playerhealth-=3
+        player.playerhealth-=1
         startLosingHealthTime=time.time()
-    if playercollide_body2 and enemy2.isdead==False and enemy.attacking:
+    if playercollide_body2 and enemy2.isdead==False and enemy2.attacking:
         enemy2.touchingPlayer=True
-        player.playerhealth-=3
+        player.playerhealth-=1
+        startLosingHealthTime=time.time()
+    if playercollide_body3 and enemy3.isdead==False and enemy3.attacking:
+        enemy3.touchingPlayer=True
+        player.playerhealth-=1
+        startLosingHealthTime=time.time()
+    if playercollide_body4 and enemy4.isdead==False and enemy4.attacking:
+        enemy4.touchingPlayer=True
+        player.playerhealth-=1
         startLosingHealthTime=time.time()
 
     if playercollide_body1==False:
         enemy.touchingPlayer=False
     if playercollide_body2==False:
         enemy2.touchingPlayer=False
+    if playercollide_body3==False:
+        enemy3.touchingPlayer=False
+    if playercollide_body4==False:
+        enemy4.touchingPlayer=False
 
-    print(player.playerhealth)
+
 
     if playercollide_lr1 and enemy.isdead==False and player.longRangeAttack==True:
         enemy.diedshortrange=False
         enemy.isdead=True
+        enemiesKilled+=1
         startDeathTime=time.time()
+        player.longRangeAttack=False
 
-    if playercollide_1r2 and enemy.isdead==False and player.longRangeAttack==True:
+    if playercollide_1r2 and enemy2.isdead==False and player.longRangeAttack==True:
         enemy2.diedshortrange=False
         enemy2.isdead=True
+        enemiesKilled+=1
         startDeathTime=time.time()
+        player.longRangeAttack=False
+    if playercollide_lr3 and enemy3.isdead==False and player.longRangeAttack==True:
+        enemy3.diedshortrange=False
+        enemy3.isdead=True
+        enemiesKilled+=1
+        startDeathTime=time.time()
+        player.longRangeAttack=False
 
-        # Enemy 3
-    if playercollide_sword3 and player.shortRangeAttack:
-        enemy3.diedshortrange = True
-        enemy3.isdead = True
-        startDeathTime = time.time()
+    if playercollide_1r4 and enemy4.isdead==False and player.longRangeAttack==True:
+        enemy4.diedshortrange=False
+        enemy4.isdead=True
+        enemiesKilled+=1
+        startDeathTime=time.time()
+        player.longRangeAttack=False
+    background.render()
 
-    if playercollide_body3 and enemy3.isdead == False and enemy3.attacking:
-        enemy3.touchingPlayer = True
-        player.playerhealth -= 3
-        startLosingHealthTime = time.time()
 
-    if playercollide_body3 == False:
-        enemy3.touchingPlayer = False
 
-    if playercollide_lr3 and enemy3.isdead == False and player.longRangeAttack == True:
-        enemy3.diedshortrange = False
-        enemy3.isdead = True
-        startDeathTime = time.time()
+    def game_over():
+        gameOverText=font.render("GAME OVER", True, (0,255,0))
+        totalEnemiesKilledText = font.render("You Killed "+str(enemiesKilled)+" Enemies", True,(0,255,0))
+        totalTimeSurvivedText = font.render("You Survived For "+totalTimeSurvived, True,(0,255,0))
+        gameOverTextRect=gameOverText.get_rect()
+        totalEnemiesKilledTextRect=totalEnemiesKilledText.get_rect()
+        totalTimeSurvivedTextRect=totalTimeSurvivedText.get_rect()
+        gameOverTextRect.center = (500, 350)
+        totalEnemiesKilledTextRect.center = (500, 400)
+        totalTimeSurvivedTextRect.center = (500,450)
+        displaysurface.blit(gameOverText, gameOverTextRect)
+        displaysurface.blit(totalEnemiesKilledText,totalEnemiesKilledTextRect)
+        displaysurface.blit(totalTimeSurvivedText,totalTimeSurvivedTextRect)
+        pygame.display.update()
+        time.sleep(5)
+        pygame.quit()
+        sys.exit()
 
-    # Enemy 4
-    if playercollide_sword4 and player.shortRangeAttack:
-        enemy4.diedshortrange = True
-        enemy4.isdead = True
-        startDeathTime = time.time()
 
-    if playercollide_body4 and enemy4.isdead == False and enemy4.attacking:
-        enemy4.touchingPlayer = True
-        player.playerhealth -= 3
-        startLosingHealthTime = time.time()
 
-    if playercollide_body4 == False:
-        enemy4.touchingPlayer = False
 
-    if playercollide_1r4 and enemy4.isdead == False and player.longRangeAttack == True:
-        enemy4.diedshortrange = False
-        enemy4.isdead = True
-        startDeathTime = time.time()
 
-    # print ("enemyvelx", enemy.vel.x, "enemyvely", enemy.vel.y, "enemy2velx", enemy2.vel.x,"enemy2vely", enemy2.vel.y)
-    # print ("\nenemyposx", enemy.pos.x, "enemyposy", enemy.pos.y, "enemy2posx", enemy2.pos.x,"enemy2posy", enemy2.pos.y)
 
-    displaysurface.blit(player.image,player.rect)
-    displaysurface.blit(enemy2.image,enemy2.rect)
-    displaysurface.blit(enemy.image,enemy.rect)  
-    displaysurface.blit(enemy3.image,enemy3.rect)
-    displaysurface.blit(enemy4.image,enemy4.rect)  
+
+    if player.playerhealth>0:
+        displaysurface.blit(player.image,player.rect)
+        displaysurface.blit(enemy2.image,enemy2.rect)
+        displaysurface.blit(enemy.image,enemy.rect)  
+        displaysurface.blit(enemy3.image,enemy3.rect)
+        displaysurface.blit(enemy4.image,enemy4.rect)  
+        displaysurface.blit(enemiesKilledText, enemiesKilledTextRect)
+        displaysurface.blit(timeSurvivedText, timeSurvivedTextRect)
+        player.healthBar()
+    else:
+        totalTimeSurvived=(minutes+":"+seconds)
+        game_over()
+
     pygame.display.update()
     FPS_CLOCK  .tick(FPS)
